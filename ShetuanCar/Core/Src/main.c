@@ -28,6 +28,7 @@
 #include "motor_calibration.h"
 #include "motor_drive.h"
 #include "chassis_test.h"
+#include "speed_test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,9 +38,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// 0 为手拨编码器标定，1 为单轮电机方向标定，2 为俯视 X 形整车动作测试。
+// 0 手拨编码器，1 单轮电机方向，2 整车动作，3 台架五档速度环测试。
 #ifndef SHETUANCAR_MOTOR_CAL_TEST
-#define SHETUANCAR_MOTOR_CAL_TEST 2
+#define SHETUANCAR_MOTOR_CAL_TEST 3
 #endif
 /* USER CODE END PD */
 
@@ -102,9 +103,13 @@ int main(void)
   MX_TIM9_Init();
   MX_TIM10_Init();
   MX_TIM11_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
-#if SHETUANCAR_MOTOR_CAL_TEST==2
+#if SHETUANCAR_MOTOR_CAL_TEST==3
+  // 默认启动五档速度环测试，USER 松开后只驱动选中的一轮。
+  SpeedTest_Init();
+#elif SHETUANCAR_MOTOR_CAL_TEST==2
   // 整车测试从零输出开始，等待使能和 USER 松开后才安排短跑。
   ChassisTest_Init();
 #elif SHETUANCAR_MOTOR_CAL_TEST==1
@@ -123,7 +128,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-#if SHETUANCAR_MOTOR_CAL_TEST==2
+#if SHETUANCAR_MOTOR_CAL_TEST==3
+    SpeedTest_Task();
+#elif SHETUANCAR_MOTOR_CAL_TEST==2
     ChassisTest_Task();
 #elif SHETUANCAR_MOTOR_CAL_TEST==1
     MotorCal_Task();
@@ -182,7 +189,16 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+#if SHETUANCAR_MOTOR_CAL_TEST==3
+/**
+ * @brief  分派 TIM6 的固定 10 ms 更新事件给速度环测试。
+ * @param  htim 产生本次更新事件的定时器句柄。
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if(htim->Instance==TIM6)  SpeedTest_ControlTick();
+}
+#endif
 /* USER CODE END 4 */
 
 /**
@@ -192,9 +208,9 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  // 初始化或 HAL 错误时先撤去电机驱动，防止进入错误循环后继续输出 PWM。
-  MotorDrive_StopOutputs();
+  // 先禁止 TIM6 等中断重新写入 PWM，再撤去驱动并进入错误循环。
   __disable_irq();
+  MotorDrive_StopOutputs();
   while (1)
   {
   }

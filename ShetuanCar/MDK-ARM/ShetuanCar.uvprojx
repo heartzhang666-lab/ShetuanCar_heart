@@ -535,6 +535,16 @@
               <FileType>1</FileType>
               <FilePath>../bsp/chassis_test.c</FilePath>
             </File>
+            <File>
+              <FileName>wheel_speed.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/wheel_speed.c</FilePath>
+            </File>
+            <File>
+              <FileName>speed_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/speed_test.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -7,6 +7,7 @@
  *   2. MotorDrive_StopOutputs()     — 按安全顺序将八路输入拉低
  *   3. MotorDrive_Init()            — 以零占空比启用各 PWM 通道
  *   4. MotorDrive_RunRaw()          — 根据带符号占空比建立四路驱动
+ *   5. MotorDrive_SetWheelDuty()    — 在同一方向连续更新速度环输出
  */
 
 #include "motor_drive.h"
@@ -34,6 +35,9 @@ static const MotorDriveInput inputs[MOTOR_DRIVE_WHEEL_COUNT][2]=
   {{&htim1,TIM_CHANNEL_2},{&htim1,TIM_CHANNEL_1}},
   {{&htim1,TIM_CHANNEL_4},{&htim1,TIM_CHANNEL_3}}
 };
+
+// 四轮实测前进极性，见硬件接线第 2.3 节。B 右后轮前进使用 IN2 恒高。
+const int8_t MotorDrive_ForwardDirection[MOTOR_DRIVE_WHEEL_COUNT]={1,-1,1,1};
 
 // 每轮跨主循环记住当前调制脚，停止时先清调制脚，避免误产生短暂反向驱动。
 static const MotorDriveInput *active_pwm[MOTOR_DRIVE_WHEEL_COUNT]={NULL};
@@ -135,4 +139,46 @@ void MotorDrive_RunRaw(const int8_t duty[MOTOR_DRIVE_WHEEL_COUNT])
     }
   }
   motor_drive_update_outputs();
+}
+
+void MotorDrive_SetWheelDuty(uint8_t wheel,int8_t direction,uint16_t command)
+{
+  const MotorDriveInput *pwm;
+  uint8_t hold_index;
+  uint32_t counts;
+  uint32_t compare;
+
+  // 合法命令只访问已经就绪的 A 至 D 路，方向取值用于确定恒高与调制输入。
+  if(ready==0U||wheel>=MOTOR_DRIVE_WHEEL_COUNT||(direction!=1&&direction!=-1))  return;
+  hold_index=direction<0?1U:0U;
+  pwm=&inputs[wheel][1U-hold_index];
+
+  if(active_pwm[wheel]!=NULL&&active_pwm[wheel]!=pwm)
+  {
+    // 未先停机就请求反向时撤去各路驱动，等待调用方安排换向间隔。
+    MotorDrive_StopOutputs();
+    return;
+  }
+
+  if(command>MOTOR_DRIVE_COMMAND_MAX)  command=MOTOR_DRIVE_COMMAND_MAX;
+  counts=__HAL_TIM_GET_AUTORELOAD(pwm->timer)+1U;
+  // 沿用旧工程 0～40000 输出单位及四舍五入。PWM1 高有效，调制脚为低时才提供驱动力。
+  compare=counts-(counts*command+MOTOR_DRIVE_COMMAND_MAX/2U)/MOTOR_DRIVE_COMMAND_MAX;
+  if(active_pwm[wheel]==pwm)
+  {
+    // 同向调速只改预装载的 CCR，由硬件在周期边界提交，避免每个控制周期重启 PWM。
+    __HAL_TIM_SET_COMPARE(pwm->timer,pwm->channel,compare);
+    return;
+  }
+
+  {
+    const MotorDriveInput *hold=&inputs[wheel][hold_index];
+
+    // 首次输出先建立恒高输入。A 两路不共用定时器，需要先提交恒高输入再提交调制输入。
+    __HAL_TIM_SET_COMPARE(hold->timer,hold->channel,__HAL_TIM_GET_AUTORELOAD(hold->timer)+1U);
+    if(hold->timer!=pwm->timer)  hold->timer->Instance->EGR=TIM_EGR_UG;
+    __HAL_TIM_SET_COMPARE(pwm->timer,pwm->channel,compare);
+    active_pwm[wheel]=pwm;
+    pwm->timer->Instance->EGR=TIM_EGR_UG;
+  }
 }

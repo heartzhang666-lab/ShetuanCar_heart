@@ -54,9 +54,6 @@ static ChassisTestAction actions[]=
 
 #define CHASSIS_TEST_ACTION_COUNT (sizeof(actions)/sizeof(actions[0]))
 
-// 实测只有 B 右后轮需要反转驱动指令。这里用电机方向系数，编码器系数用于轮速反馈。
-static const int8_t motor_direction[MOTOR_DRIVE_WHEEL_COUNT]={1,-1,1,1};
-
 typedef enum
 {
   CHASSIS_TEST_IDLE,
@@ -105,7 +102,7 @@ static void chassis_test_start(void)
   {
     // 本测试使用固定开环占空比验证动作方向，各轮实际转速随负载而变。
     duty[wheel]=(int8_t)(actions[selected_action].wheel_direction[wheel]*
-                         motor_direction[wheel]*CHASSIS_TEST_DUTY_PERCENT);
+                         MotorDrive_ForwardDirection[wheel]*CHASSIS_TEST_DUTY_PERCENT);
   }
   MotorDrive_RunRaw(duty);
   phase=CHASSIS_TEST_RUNNING;
