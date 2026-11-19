@@ -1,0 +1,26 @@
+# 本地参考资料
+/资料/
+
+# Keil 本地界面和调试配置
+*.uvguix
+*.uvguix.*
+*.uvgui
+*.uvgui.*
+*.uvoptx
+*.uvopt
+/ShetuanCar/MDK-ARM/DebugConfig/
+/ShetuanCar/MDK-ARM/RTE/_*/
+/ShetuanCar/MDK-ARM/JLinkLog*.txt
+
+# Keil 构建目录和目录外生成的列表、日志
+/ShetuanCar/MDK-ARM/ShetuanCar/
+/ShetuanCar/MDK-ARM/Objects/
+/ShetuanCar/MDK-ARM/Listings/
+/ShetuanCar/MDK-ARM/*.lst
+/ShetuanCar/MDK-ARM/*.build_log.htm
+/ShetuanCar/MDK-ARM/*.log
+
+# 系统生成的目录元数据
+Thumbs.db
+Desktop.ini
+.DS_Store
