@@ -520,6 +520,11 @@
               <FileType>1</FileType>
               <FilePath>../bsp/motor_calibration.c</FilePath>
             </File>
+            <File>
+              <FileName>encoder_calibration.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/encoder_calibration.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

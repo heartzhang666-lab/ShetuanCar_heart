@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "OLED.h"
+#include "encoder_calibration.h"
 #include "motor_calibration.h"
 /* USER CODE END Includes */
 
@@ -34,7 +35,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+// 0 为手拨编码器标定，上电后 PWM 通道保持关闭。需要复测驱动方向时编译为 1。
+#ifndef SHETUANCAR_MOTOR_CAL_TEST
+#define SHETUANCAR_MOTOR_CAL_TEST 0
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -89,13 +93,22 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM4_Init();
+  MX_TIM5_Init();
   MX_TIM9_Init();
   MX_TIM10_Init();
   MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
-  // 先准备 OLED 显示，再以零占空比启动八路 PWM。电机等待使能和 USER 的按下边沿。
   OLED_Init();
+#if SHETUANCAR_MOTOR_CAL_TEST
+  // 电机方向复测版本以零占空比启动 PWM，等待使能和 USER 按下。
   MotorCal_Init();
+#else
+  // 手拨版本只启动编码器。PWM 定时器初始化为零占空比，各输出通道保持关闭。
+  EncoderCal_Init();
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -105,8 +118,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // 连续轮询使能和按键，试转与暂停均按 HAL 毫秒节拍推进。
+#if SHETUANCAR_MOTOR_CAL_TEST
     MotorCal_Task();
+#else
+    // USER 只选择并清零显示基准，主循环持续读取选中轮的原始计数。
+    EncoderCal_Task();
+#endif
   }
   /* USER CODE END 3 */
 }

@@ -87,6 +87,23 @@ void Error_Handler(void);
 #define MOTOR_D_IN2_Pin GPIO_PIN_13
 #define MOTOR_D_IN2_GPIO_Port GPIOE
 
+#define ENC_D_CH1_Pin GPIO_PIN_0
+#define ENC_D_CH1_GPIO_Port GPIOA
+#define ENC_D_CH2_Pin GPIO_PIN_1
+#define ENC_D_CH2_GPIO_Port GPIOA
+#define ENC_A_CH1_Pin GPIO_PIN_15
+#define ENC_A_CH1_GPIO_Port GPIOA
+#define ENC_A_CH2_Pin GPIO_PIN_3
+#define ENC_A_CH2_GPIO_Port GPIOB
+#define ENC_B_CH1_Pin GPIO_PIN_4
+#define ENC_B_CH1_GPIO_Port GPIOB
+#define ENC_B_CH2_Pin GPIO_PIN_5
+#define ENC_B_CH2_GPIO_Port GPIOB
+#define ENC_C_CH1_Pin GPIO_PIN_6
+#define ENC_C_CH1_GPIO_Port GPIOB
+#define ENC_C_CH2_Pin GPIO_PIN_7
+#define ENC_C_CH2_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

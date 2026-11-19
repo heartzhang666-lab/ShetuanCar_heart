@@ -1,6 +1,6 @@
 /**
  * @file    motor_calibration.c
- * @brief   使用 USER 按键和 OLED 逐轮验证四只电机的实际转向。
+ * @brief   使用 USER 按键和 OLED 逐轮验证四只电机在慢衰减下的实际转向。
  *
  * 文件结构：
  *   1. MotorCal_StopOutputs()  — 清零全部驱动输入，输出进入滑行状态
@@ -47,7 +47,8 @@ typedef enum
 //    这里的 IN1/IN2 指 AT8236 芯片引脚。PWM 引脚由 MCU 复用推挽输出，带下拉。
 //    A 左后 PB9/PB8，B 右后 PE5/PE6。
 //    C 右前 PE11/PE9，D 左前 PE14/PE13。C/D 共用 TIM1 的周期，各自有独立比较寄存器。
-//    试转的“+”是 IN1 输出 PWM、IN2 保持低电平，“-”交换两路。
+//    试转的“+”是 IN1 保持高电平、IN2 输出反相占空比的 PWM，“-”交换两路。
+//    调制脚为低时驱动电机，为高时两个输入都为高，绕组续流并进入慢衰减。
 //    这两个符号用于辨别电气极性，车体前进方向以实物轮子顶部朝车头转动为准。
 // ================================================================
 static MotorCalWheel wheels[MOTOR_CAL_WHEEL_COUNT]=
@@ -76,17 +77,34 @@ static GPIO_PinState last_enable=GPIO_PIN_RESET;
 // 定时器初始化完成后才允许写比较寄存器。早期时钟错误进入 Error_Handler 时此值仍为 0。
 static uint8_t pwm_ready=0U;
 
+// 保存当前调制脚，停机时先使它为低，再清除恒高脚，避免换相时出现反向脉冲。
+static TIM_HandleTypeDef *active_pwm_timer=NULL;
+static uint32_t active_pwm_channel=0U;
+
 void MotorCal_StopOutputs(void)
 {
   uint8_t i;
 
   if(pwm_ready==0U)  return;
+  if(active_pwm_timer!=NULL)
+  {
+    // 比较值写入预装载寄存器。先强制装载调制脚的低电平，再撤去恒高脚。
+    __HAL_TIM_SET_COMPARE(active_pwm_timer,active_pwm_channel,0U);
+    active_pwm_timer->Instance->EGR=TIM_EGR_UG;
+    active_pwm_timer=NULL;
+  }
   for(i=0U;i<MOTOR_CAL_WHEEL_COUNT;i++)
   {
-    // CCR=0 在下一次 PWM 更新时使两路输出都为低，AT8236 释放电机以滑行停转。
     __HAL_TIM_SET_COMPARE(wheels[i].in1_timer,wheels[i].in1_channel,0U);
     __HAL_TIM_SET_COMPARE(wheels[i].in2_timer,wheels[i].in2_channel,0U);
   }
+
+  // 四个定时器都装载零比较值，AT8236 的两路输入均为低，电机滑行。
+  // 标定 PWM 未启用更新中断，软件更新事件只用于同步装载和重置计数器。
+  htim1.Instance->EGR=TIM_EGR_UG;
+  htim9.Instance->EGR=TIM_EGR_UG;
+  htim10.Instance->EGR=TIM_EGR_UG;
+  htim11.Instance->EGR=TIM_EGR_UG;
 }
 
 static void motor_cal_write_step(void)
@@ -94,13 +112,23 @@ static void motor_cal_write_step(void)
   const MotorCalWheel *wheel=&wheels[selected_wheel];
   uint8_t duty=duty_levels[step_index/2U];
   uint8_t reverse=step_index&1U;
-  TIM_HandleTypeDef *timer=reverse?wheel->in2_timer:wheel->in1_timer;
-  uint32_t channel=reverse?wheel->in2_channel:wheel->in1_channel;
-  uint32_t counts=__HAL_TIM_GET_AUTORELOAD(timer)+1U;
+  TIM_HandleTypeDef *hold_timer=reverse?wheel->in2_timer:wheel->in1_timer;
+  uint32_t hold_channel=reverse?wheel->in2_channel:wheel->in1_channel;
+  TIM_HandleTypeDef *pwm_timer=reverse?wheel->in1_timer:wheel->in2_timer;
+  uint32_t pwm_channel=reverse?wheel->in1_channel:wheel->in2_channel;
+  uint32_t pwm_counts=__HAL_TIM_GET_AUTORELOAD(pwm_timer)+1U;
 
-  // PWM1 高有效，CCR/(ARR+1) 就是有效驱动占空比。另一路维持零，PWM 低电平时为快衰减。
-  // 10 kHz 下，最短的 20% 高脉冲持续 20 us，可在滑行间隔后唤醒 AT8236。
-  __HAL_TIM_SET_COMPARE(timer,channel,(counts*duty)/100U);
+  // PWM1 的 CCR=ARR+1 表示恒高。A 轮的两路定时器独立，先装载恒高脚再启动调制脚，
+  // 避免调制脚先变高时产生反向驱动。共享计数器的轮子共用一次更新事件。
+  __HAL_TIM_SET_COMPARE(hold_timer,hold_channel,__HAL_TIM_GET_AUTORELOAD(hold_timer)+1U);
+  if(hold_timer!=pwm_timer)  hold_timer->Instance->EGR=TIM_EGR_UG;
+
+  // OLED 上的占空比是有效驱动占比，调制脚为低才驱动。20% 对应高 80 us、低 20 us。
+  // 高电平区间两路同时为高，电流通过桥内低侧通路续流。
+  active_pwm_timer=pwm_timer;
+  active_pwm_channel=pwm_channel;
+  __HAL_TIM_SET_COMPARE(pwm_timer,pwm_channel,pwm_counts-(pwm_counts*duty)/100U);
+  pwm_timer->Instance->EGR=TIM_EGR_UG;
 }
 
 /**
@@ -175,7 +203,7 @@ void MotorCal_Init(void)
   last_enable=HAL_GPIO_ReadPin(MOTOR_ENABLE_GPIO_Port,MOTOR_ENABLE_Pin);
 
   // ------- 3. 显示待机状态，由用户决定何时试转 -------
-  OLED_ShowString(1,1,"Motor direction ");
+  OLED_ShowString(1,1,"Motor slow decay");
   OLED_ShowString(2,1,"Wheel: -        ");
   OLED_ShowString(3,1,"Stopped         ");
   OLED_ShowString(4,1,last_enable==GPIO_PIN_SET?"USER: Next wheel":"Enable switch   ");
