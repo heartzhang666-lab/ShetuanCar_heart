@@ -47,6 +47,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   // 切换到输出模式前预置电平：PD11 为数据态、PD12 释放复位，
   // PD13 数据和 PD14 时钟均保持低电平，避免初始化 GPIO 时产生采样沿。
@@ -59,6 +60,16 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull=GPIO_NOPULL;
   GPIO_InitStruct.Speed=GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD,&GPIO_InitStruct);
+
+  // PD3 使能开关沿用板卡上拉输入，高电平允许运行，低电平撤去驱动。
+  GPIO_InitStruct.Pin=MOTOR_ENABLE_Pin;
+  GPIO_InitStruct.Mode=GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull=GPIO_PULLUP;
+  HAL_GPIO_Init(MOTOR_ENABLE_GPIO_Port,&GPIO_InitStruct);
+
+  // PE0 是 USER 按键，上拉输入，按下接地。标定任务对低有效边沿消抖。
+  GPIO_InitStruct.Pin=USER_KEY_Pin;
+  HAL_GPIO_Init(USER_KEY_GPIO_Port,&GPIO_InitStruct);
 }
 
 /* USER CODE BEGIN 2 */

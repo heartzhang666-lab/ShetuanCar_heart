@@ -401,6 +401,11 @@
               <FilePath>../Core/Src/gpio.c</FilePath>
             </File>
             <File>
+              <FileName>tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/tim.c</FilePath>
+            </File>
+            <File>
               <FileName>stm32f4xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_it.c</FilePath>
@@ -509,6 +514,11 @@
               <FileName>OLED.c</FileName>
               <FileType>1</FileType>
               <FilePath>../bsp/OLED.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_calibration.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/motor_calibration.c</FilePath>
             </File>
           </Files>
         </Group>

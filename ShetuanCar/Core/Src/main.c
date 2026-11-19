@@ -18,11 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "OLED.h"
+#include "motor_calibration.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -86,10 +88,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_TIM1_Init();
+  MX_TIM9_Init();
+  MX_TIM10_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
-  // GPIO 和 HAL 节拍就绪后复位并初始化 OLED，首行文字用于上电验屏。
+  // 先准备 OLED 显示，再以零占空比启动八路 PWM。电机等待使能和 USER 的按下边沿。
   OLED_Init();
-  OLED_ShowString(1,1,"ShetuanCar");
+  MotorCal_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,6 +105,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // 连续轮询使能和按键，试转与暂停均按 HAL 毫秒节拍推进。
+    MotorCal_Task();
   }
   /* USER CODE END 3 */
 }
@@ -160,7 +168,8 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  // 初始化或 HAL 错误时先撤去电机驱动，防止进入错误循环后继续输出 PWM。
+  MotorCal_StopOutputs();
   __disable_irq();
   while (1)
   {

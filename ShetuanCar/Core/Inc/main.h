@@ -66,6 +66,27 @@ void Error_Handler(void);
 #define OLED_SCL_Pin GPIO_PIN_14
 #define OLED_SCL_GPIO_Port GPIOD
 
+#define MOTOR_ENABLE_Pin GPIO_PIN_3
+#define MOTOR_ENABLE_GPIO_Port GPIOD
+#define USER_KEY_Pin GPIO_PIN_0
+#define USER_KEY_GPIO_Port GPIOE
+#define MOTOR_A_IN1_Pin GPIO_PIN_9
+#define MOTOR_A_IN1_GPIO_Port GPIOB
+#define MOTOR_A_IN2_Pin GPIO_PIN_8
+#define MOTOR_A_IN2_GPIO_Port GPIOB
+#define MOTOR_B_IN1_Pin GPIO_PIN_5
+#define MOTOR_B_IN1_GPIO_Port GPIOE
+#define MOTOR_B_IN2_Pin GPIO_PIN_6
+#define MOTOR_B_IN2_GPIO_Port GPIOE
+#define MOTOR_C_IN1_Pin GPIO_PIN_11
+#define MOTOR_C_IN1_GPIO_Port GPIOE
+#define MOTOR_C_IN2_Pin GPIO_PIN_9
+#define MOTOR_C_IN2_GPIO_Port GPIOE
+#define MOTOR_D_IN1_Pin GPIO_PIN_14
+#define MOTOR_D_IN1_GPIO_Port GPIOE
+#define MOTOR_D_IN2_Pin GPIO_PIN_13
+#define MOTOR_D_IN2_GPIO_Port GPIOE
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
