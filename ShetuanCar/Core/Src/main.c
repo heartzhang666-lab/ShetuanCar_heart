@@ -26,6 +26,8 @@
 #include "OLED.h"
 #include "encoder_calibration.h"
 #include "motor_calibration.h"
+#include "motor_drive.h"
+#include "chassis_test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -35,9 +37,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// 0 为手拨编码器标定，上电后 PWM 通道保持关闭。需要复测驱动方向时编译为 1。
+// 0 为手拨编码器标定，1 为单轮电机方向标定，2 为俯视 X 形整车动作测试。
 #ifndef SHETUANCAR_MOTOR_CAL_TEST
-#define SHETUANCAR_MOTOR_CAL_TEST 0
+#define SHETUANCAR_MOTOR_CAL_TEST 2
 #endif
 /* USER CODE END PD */
 
@@ -102,8 +104,11 @@ int main(void)
   MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
-#if SHETUANCAR_MOTOR_CAL_TEST
-  // 电机方向复测版本以零占空比启动 PWM，等待使能和 USER 按下。
+#if SHETUANCAR_MOTOR_CAL_TEST==2
+  // 整车测试从零输出开始，等待使能和 USER 松开后才安排短跑。
+  ChassisTest_Init();
+#elif SHETUANCAR_MOTOR_CAL_TEST==1
+  // 单轮方向复测同样从零输出开始，使用原始电气方向试转。
   MotorCal_Init();
 #else
   // 手拨版本只启动编码器。PWM 定时器初始化为零占空比，各输出通道保持关闭。
@@ -118,7 +123,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-#if SHETUANCAR_MOTOR_CAL_TEST
+#if SHETUANCAR_MOTOR_CAL_TEST==2
+    ChassisTest_Task();
+#elif SHETUANCAR_MOTOR_CAL_TEST==1
     MotorCal_Task();
 #else
     // USER 只选择并清零显示基准，主循环持续读取选中轮的原始计数。
@@ -186,7 +193,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   // 初始化或 HAL 错误时先撤去电机驱动，防止进入错误循环后继续输出 PWM。
-  MotorCal_StopOutputs();
+  MotorDrive_StopOutputs();
   __disable_irq();
   while (1)
   {
