@@ -401,6 +401,16 @@
               <FilePath>../Core/Src/gpio.c</FilePath>
             </File>
             <File>
+              <FileName>adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/usart.c</FilePath>
+            </File>
+            <File>
               <FileName>tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/tim.c</FilePath>
@@ -429,6 +439,21 @@
               <FileName>stm32f4xx_hal_tim_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_adc_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_rcc.c</FileName>
@@ -544,6 +569,21 @@
               <FileName>speed_test.c</FileName>
               <FileType>1</FileType>
               <FilePath>../bsp/speed_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>gray_line.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/gray_line.c</FilePath>
+            </File>
+            <File>
+              <FileName>line_tuning.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/line_tuning.c</FilePath>
+            </File>
+            <File>
+              <FileName>line_track.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../bsp/line_track.c</FilePath>
             </File>
           </Files>
         </Group>

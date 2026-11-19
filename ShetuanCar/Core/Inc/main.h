@@ -104,6 +104,15 @@ void Error_Handler(void);
 #define ENC_C_CH2_Pin GPIO_PIN_7
 #define ENC_C_CH2_GPIO_Port GPIOB
 
+#define GRAY_OUT_Pin GPIO_PIN_0
+#define GRAY_OUT_GPIO_Port GPIOC
+#define GRAY_AD0_Pin GPIO_PIN_1
+#define GRAY_AD0_GPIO_Port GPIOC
+#define GRAY_AD1_Pin GPIO_PIN_2
+#define GRAY_AD1_GPIO_Port GPIOC
+#define GRAY_AD2_Pin GPIO_PIN_3
+#define GRAY_AD2_GPIO_Port GPIOC
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

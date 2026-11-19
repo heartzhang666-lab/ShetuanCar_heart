@@ -46,6 +46,7 @@ void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
 
@@ -53,6 +54,8 @@ void MX_GPIO_Init(void)
   // PD13 数据和 PD14 时钟均保持低电平，避免初始化 GPIO 时产生采样沿。
   HAL_GPIO_WritePin(GPIOD,OLED_DC_Pin|OLED_RST_Pin,GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOD,OLED_SDA_Pin|OLED_SCL_Pin,GPIO_PIN_RESET);
+  // PC1～PC3 上电先置 111，反相寻址对应灰度通道 0。
+  HAL_GPIO_WritePin(GPIOC,GRAY_AD0_Pin|GRAY_AD1_Pin|GRAY_AD2_Pin,GPIO_PIN_SET);
 
   // OLED 四根信号均由 MCU 驱动，采用低速推挽输出，无内部上下拉。
   GPIO_InitStruct.Pin=OLED_DC_Pin|OLED_RST_Pin|OLED_SDA_Pin|OLED_SCL_Pin;
@@ -61,13 +64,17 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed=GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD,&GPIO_InitStruct);
 
+  // 三根灰度地址线使用无上下拉的低速推挽输出，与 ADC1 的 PC0 模拟输入分开。
+  GPIO_InitStruct.Pin=GRAY_AD0_Pin|GRAY_AD1_Pin|GRAY_AD2_Pin;
+  HAL_GPIO_Init(GPIOC,&GPIO_InitStruct);
+
   // PD3 使能开关沿用板卡上拉输入，高电平允许运行，低电平撤去驱动。
   GPIO_InitStruct.Pin=MOTOR_ENABLE_Pin;
   GPIO_InitStruct.Mode=GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull=GPIO_PULLUP;
   HAL_GPIO_Init(MOTOR_ENABLE_GPIO_Port,&GPIO_InitStruct);
 
-  // PE0 是 USER 按键，上拉输入，按下接地。标定任务对低有效边沿消抖。
+  // PE0 是 USER 按键，上拉输入，按下接地。应用任务对低有效边沿消抖。
   GPIO_InitStruct.Pin=USER_KEY_Pin;
   HAL_GPIO_Init(USER_KEY_GPIO_Port,&GPIO_InitStruct);
 }

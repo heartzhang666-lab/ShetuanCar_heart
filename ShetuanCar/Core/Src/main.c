@@ -18,7 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -29,6 +31,7 @@
 #include "motor_drive.h"
 #include "chassis_test.h"
 #include "speed_test.h"
+#include "line_track.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,9 +41,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// 0 手拨编码器，1 单轮电机方向，2 整车动作，3 台架五档速度环测试。
+// 0 手拨编码器，1 单轮方向，2 整车动作，3 五档速度环，4 灰度循迹。
 #ifndef SHETUANCAR_MOTOR_CAL_TEST
-#define SHETUANCAR_MOTOR_CAL_TEST 3
+#define SHETUANCAR_MOTOR_CAL_TEST 4
 #endif
 /* USER CODE END PD */
 
@@ -104,10 +107,15 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM11_Init();
   MX_TIM6_Init();
+  MX_ADC1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
-#if SHETUANCAR_MOTOR_CAL_TEST==3
-  // 默认启动五档速度环测试，USER 松开后只驱动选中的一轮。
+#if SHETUANCAR_MOTOR_CAL_TEST==4
+  // 循迹在上电后待机，首次 USER 按下才允许速度环输出。
+  LineTrack_Init();
+#elif SHETUANCAR_MOTOR_CAL_TEST==3
+  // 五档速度环测试在 USER 松开后只驱动选中的一轮。
   SpeedTest_Init();
 #elif SHETUANCAR_MOTOR_CAL_TEST==2
   // 整车测试从零输出开始，等待使能和 USER 松开后才安排短跑。
@@ -128,7 +136,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-#if SHETUANCAR_MOTOR_CAL_TEST==3
+#if SHETUANCAR_MOTOR_CAL_TEST==4
+    LineTrack_Task();
+#elif SHETUANCAR_MOTOR_CAL_TEST==3
     SpeedTest_Task();
 #elif SHETUANCAR_MOTOR_CAL_TEST==2
     ChassisTest_Task();
@@ -189,14 +199,19 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-#if SHETUANCAR_MOTOR_CAL_TEST==3
+#if SHETUANCAR_MOTOR_CAL_TEST==3||SHETUANCAR_MOTOR_CAL_TEST==4
 /**
- * @brief  分派 TIM6 的固定 10 ms 更新事件给速度环测试。
+ * @brief  分派 TIM6 的固定 10 ms 更新事件给当前速度环应用。
  * @param  htim 产生本次更新事件的定时器句柄。
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if(htim->Instance==TIM6)  SpeedTest_ControlTick();
+  if(htim->Instance!=TIM6)  return;
+#if SHETUANCAR_MOTOR_CAL_TEST==4
+  LineTrack_ControlTick();
+#else
+  SpeedTest_ControlTick();
+#endif
 }
 #endif
 /* USER CODE END 4 */
