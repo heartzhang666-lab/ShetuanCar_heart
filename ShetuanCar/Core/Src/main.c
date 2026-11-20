@@ -22,7 +22,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-
+//shit
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "OLED.h"
@@ -33,7 +33,7 @@
 #include "speed_test.h"
 #include "line_track.h"
 /* USER CODE END Includes */
-
+//imking
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
