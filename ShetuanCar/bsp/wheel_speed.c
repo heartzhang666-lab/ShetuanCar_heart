@@ -5,7 +5,8 @@
  * 文件结构：
  *   1. WheelSpeed_Init()   — 启动四组 TI12 编码器和 PWM 输出
  *   2. WheelSpeed_Reset()  — 为本轮试跑建立计数和误差基线
- *   3. WheelSpeed_Update() — 换算计数差值、求增量 PID 并更新该轮驱动
+ *   3. WheelSpeed_Read()   — 只读取带方向计数差值，不改变驱动输出
+ *   4. WheelSpeed_Update() — 用采样结果求增量 PID 并更新该轮驱动
  */
 
 #include "wheel_speed.h"
@@ -60,18 +61,24 @@ void WheelSpeed_Reset(uint8_t wheel,WheelSpeedController *controller)
 //    原始差值按计数器位宽取模。相邻 10 ms 的位移折算值须小于半个计数范围，
 //    上半区解释为负增量，从而在 CNT 跨过 0 或上限时维持速度符号。
 // ================================================================
-int32_t WheelSpeed_Update(uint8_t wheel,uint16_t target,WheelSpeedController *controller)
+int32_t WheelSpeed_Read(uint8_t wheel,WheelSpeedController *controller)
 {
   TIM_HandleTypeDef *timer=encoders[wheel];
   uint32_t counter=__HAL_TIM_GET_COUNTER(timer);
   uint32_t mask=__HAL_TIM_GET_AUTORELOAD(timer);
   uint32_t difference=(counter-controller->last_counter)&mask;
   int32_t raw_difference=(difference<=(mask>>1U))?(int32_t)difference:-1-(int32_t)(mask-difference);
-  int32_t speed=raw_difference*encoder_direction[wheel];
-  float error=(float)target-(float)speed;
 
-  // ------- 1. 保留本次采样基准 -------
+  // 读取同时推进采样基准，但不改变 PI 历史或 PWM，供终点制动时确认轮子已停止。
   controller->last_counter=counter;
+  return raw_difference*encoder_direction[wheel];
+}
+
+int32_t WheelSpeed_Update(uint8_t wheel,uint16_t target,WheelSpeedController *controller)
+{
+  // ------- 1. 读取本周期带方向计数，原有换算、增量 PI 和输出限幅保持不变 -------
+  int32_t speed=WheelSpeed_Read(wheel,controller);
+  float error=(float)target-(float)speed;
 
   // ------- 2. 复用旧工程的增量式更新 -------
   // P 作用于相邻误差之差，I 每周期加入当前误差，D 使用二阶差分。

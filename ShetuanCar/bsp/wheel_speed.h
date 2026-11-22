@@ -29,6 +29,17 @@ void WheelSpeed_Init(void);
 void WheelSpeed_Reset(uint8_t wheel,WheelSpeedController *controller);
 
 /**
+ * @brief  仅采样轮速并推进计数基准，不更新 PI 历史，也不写 PWM。
+ * @param  wheel 按 A、B、C、D 排列，范围 0～3。
+ * @param  controller 已经 Reset 的该轮状态；不可让多个调用者在同一拍重复推进基准。
+ * @return 前进为正的轮速，单位为计数/采样周期，规定调用周期为 10 ms。
+ *
+ * 终点制动时由 TIM6 使用，零增量表示该周期没有可测的轮子转动。
+ * WheelSpeed_Update() 内部已经调用本函数，正常调速时不要额外读取同一状态。
+ */
+int32_t WheelSpeed_Read(uint8_t wheel,WheelSpeedController *controller);
+
+/**
  * @brief  在固定 10 ms 节拍更新一次所选车轮的前向速度环。
  * @param  wheel 与本轮状态绑定的轮位下标，范围 0～3。
  * @param  target 大于零的前进目标，单位为计数/10 ms。
